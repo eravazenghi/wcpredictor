@@ -10,14 +10,19 @@ st.set_page_config(page_title="Simulador Mundial 2026", page_icon="⚽", layout=
 @st.cache_data
 def cargar_datos():
     try:
-        df = pd.read_csv("equipos.csv")
+        # Leemos el CSV forzando a usar solo las 4 columnas principales
+        df = pd.read_csv("equipos.csv", usecols=["Pais", "Ataque", "Defensa", "Elo"])
+        
+        # Limpieza estricta de strings y descarte de filas con datos faltantes (NaN)
         df.columns = df.columns.str.strip()
-        df['Pais'] = df['Pais'].str.strip()
-        # Ordenamos por Elo de mayor a menor para la simulación de llaves
+        df['Pais'] = df['Pais'].astype(str).str.strip()
+        df = df.dropna(subset=["Pais", "Ataque", "Defensa", "Elo"])
+        
+        # Ordenamos por Elo jerárquico
         df = df.sort_values(by="Elo", ascending=False)
         return df.set_index("Pais").to_dict(orient="index")
-    except FileNotFoundError:
-        st.error("Error: No se encontró el archivo 'equipos.csv'. Asegúrate de subirlo a GitHub junto a este archivo.")
+    except Exception as e:
+        st.error(f"Error al cargar 'equipos.csv': {e}")
         return {}
 
 data = cargar_datos()
@@ -26,12 +31,16 @@ data = cargar_datos()
 def predecir_partido(local, visitante):
     PROMEDIO_GOLES = 1.35
     
-    # Control de seguridad absoluto: si no existen, evitamos el colapso
+    # Doble check de contingencia
     if local not in data or visitante not in data:
         return 1, 0
         
-    lambda_local = data[local]["ataque"] * data[visitante]["defensa"] * PROMEDIO_GOLES
-    lambda_visit = data[visitante]["ataque"] * data[local]["defensa"] * PROMEDIO_GOLES
+    try:
+        lambda_local = float(data[local]["ataque"]) * float(data[visitante]["defensa"]) * PROMEDIO_GOLES
+        lambda_visit = float(data[visitante]["ataque"]) * float(data[local]["defensa"]) * PROMEDIO_GOLES
+    except (TypeError, ValueError):
+        # Si algún parámetro no es numérico, asignamos un valor por defecto seguro
+        lambda_local, lambda_visit = 1.2, 1.0
     
     goles_local = int(np.argmax([poisson.pmf(i, lambda_local) for i in range(7)]))
     goles_visit = int(np.argmax([poisson.pmf(i, lambda_visit) for i in range(7)]))
@@ -45,7 +54,6 @@ def resolver_partido_eliminatorio(local, visitante):
     elif g_v > g_l:
         return visitante, f"{g_l} - {g_v}"
     else:
-        # Desempate seguro por Elo
         elo_local = data[local]['Elo'] if local in data else 1500
         elo_visit = data[visitante]['Elo'] if visitante in data else 1500
         ganador = local if elo_local > elo_visit else visitante
@@ -53,7 +61,7 @@ def resolver_partido_eliminatorio(local, visitante):
 
 # --- INTERFAZ DE USUARIO (UI) ---
 st.title("🏆 Simulador Inteligente - Mundial 2026")
-st.markdown("Predicciones automáticas usando *Distribución de Poisson* y *Ranking Elo*.")
+st.markdown("Predicciones automatizadas usando *Distribución de Poisson* y *Ranking Elo*.")
 
 if data:
     tab1, tab2 = st.tabs(["📊 Partido Individual", "🌿 Llaves del Torneo (Playoffs)"])
@@ -89,16 +97,13 @@ if data:
                     st.info(f"🤝 **Empate en los 90'.** Por balance de Ranking Elo, avanza en penales: **{ganador_e}**")
 
     # ---------------------------------------------------------
-    # PESTAÑA 2: LLAVES DINÁMICAS (A PRUEBA DE ERRORES)
+    # PESTAÑA 2: LLAVES DINÁMICAS
     # ---------------------------------------------------------
     with tab2:
         st.subheader("Simulación del Cuadro Final")
         st.write("El sistema toma automáticamente las 32 mejores selecciones de tu archivo de datos para armar los cruces.")
         
-        # Tomamos los mejores 32 del diccionario (ya ordenados por Elo en la carga de datos)
         mejores_32 = list(data.keys())[:32]
-        
-        # Generamos los cruces simulando un sembrado (Mejor vs Peor: 1 vs 32, 2 vs 31...)
         llaves_16avos = []
         for i in range(16):
             llaves_16avos.append((mejores_32[i], mejores_32[31 - i]))
@@ -164,3 +169,5 @@ if data:
                 ⭐ ¡CAMPEÓN DEL MUNDO: {campeon.upper()}! ⭐
             </div>
             """, unsafe_allow_html=True)
+else:
+    st.warning("La base de datos está vacía o el formato del archivo 'equipos.csv' es incorrecto.")
