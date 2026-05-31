@@ -13,6 +13,8 @@ def cargar_datos():
         df = pd.read_csv("equipos.csv")
         df.columns = df.columns.str.strip()
         df['Pais'] = df['Pais'].str.strip()
+        # Ordenamos por Elo de mayor a menor para la simulación de llaves
+        df = df.sort_values(by="Elo", ascending=False)
         return df.set_index("Pais").to_dict(orient="index")
     except FileNotFoundError:
         st.error("Error: No se encontró el archivo 'equipos.csv'. Asegúrate de subirlo a GitHub junto a este archivo.")
@@ -24,9 +26,9 @@ data = cargar_datos()
 def predecir_partido(local, visitante):
     PROMEDIO_GOLES = 1.35
     
-    # Validación de seguridad: si el equipo no existe en el CSV, usamos valores por defecto para que no explote
+    # Control de seguridad absoluto: si no existen, evitamos el colapso
     if local not in data or visitante not in data:
-        return 1, 1
+        return 1, 0
         
     lambda_local = data[local]["ataque"] * data[visitante]["defensa"] * PROMEDIO_GOLES
     lambda_visit = data[visitante]["ataque"] * data[local]["defensa"] * PROMEDIO_GOLES
@@ -43,7 +45,7 @@ def resolver_partido_eliminatorio(local, visitante):
     elif g_v > g_l:
         return visitante, f"{g_l} - {g_v}"
     else:
-        # Desempate seguro por Elo histórico
+        # Desempate seguro por Elo
         elo_local = data[local]['Elo'] if local in data else 1500
         elo_visit = data[visitante]['Elo'] if visitante in data else 1500
         ganador = local if elo_local > elo_visit else visitante
@@ -51,7 +53,7 @@ def resolver_partido_eliminatorio(local, visitante):
 
 # --- INTERFAZ DE USUARIO (UI) ---
 st.title("🏆 Simulador Inteligente - Mundial 2026")
-st.markdown("Predicciones de alta precisión usando *Distribución de Poisson* y *Ranking Elo*.")
+st.markdown("Predicciones automáticas usando *Distribución de Poisson* y *Ranking Elo*.")
 
 if data:
     tab1, tab2 = st.tabs(["📊 Partido Individual", "🌿 Llaves del Torneo (Playoffs)"])
@@ -83,29 +85,23 @@ if data:
                 if g_a > g_b: st.success(f"🎉 **Ganador proyectado:** {equipo_a}")
                 elif g_b > g_a: st.success(f"🎉 **Ganador proyectado:** {equipo_b}")
                 else:
-                    elo_a = data[equipo_a]['Elo'] if equipo_a in data else 1500
-                    elo_b = data[equipo_b]['Elo'] if equipo_b in data else 1500
-                    ganador_e = equipo_a if elo_a > elo_b else equipo_b
+                    ganador_e = equipo_a if data[equipo_a]['Elo'] > data[equipo_b]['Elo'] else equipo_b
                     st.info(f"🤝 **Empate en los 90'.** Por balance de Ranking Elo, avanza en penales: **{ganador_e}**")
 
     # ---------------------------------------------------------
-    # PESTAÑA 2: LLAVES DEL MUNDIAL (PROYECCIÓN COMPLETA)
+    # PESTAÑA 2: LLAVES DINÁMICAS (A PRUEBA DE ERRORES)
     # ---------------------------------------------------------
     with tab2:
-        st.subheader("Simulación del Cuadro Final (48 Equipos - Clasificados a 16avos)")
-        st.write("Estructura proyectada con las 32 mejores selecciones basadas en rendimiento previo.")
+        st.subheader("Simulación del Cuadro Final")
+        st.write("El sistema toma automáticamente las 32 mejores selecciones de tu archivo de datos para armar los cruces.")
         
-        # CORREGIDO: Lista exacta de 32 equipos únicos presentes en tu equipos.csv
-        llaves_16avos = [
-            ("Argentina", "Nigeria"), ("México", "Alemania"),
-            ("Francia", "Egipto"), ("Uruguay", "Corea del Sur"),
-            ("España", "Ecuador"), ("Países Bajos", "Irán"),
-            ("Brasil", "Canadá"), ("Colombia", "Australia"),
-            ("Inglaterra", "Marruecos"), ("Bélgica", "Estados Unidos"),
-            ("Portugal", "Argelia"), ("Croacia", "Japón"),
-            ("Italia", "Senegal"), ("Suiza", "Ucrania"),
-            ("Dinamarca", "Austria"), ("Costa de Marfil", "Túnez")
-        ]
+        # Tomamos los mejores 32 del diccionario (ya ordenados por Elo en la carga de datos)
+        mejores_32 = list(data.keys())[:32]
+        
+        # Generamos los cruces simulando un sembrado (Mejor vs Peor: 1 vs 32, 2 vs 31...)
+        llaves_16avos = []
+        for i in range(16):
+            llaves_16avos.append((mejores_32[i], mejores_32[31 - i]))
         
         if st.button("🔮 Correr Simulación Completa del Mundial", type="primary", use_container_width=True):
             
