@@ -1,49 +1,49 @@
-Pais,Ataque,Defensa,Elo
+pais,ataque,defensa,elo
 Argentina,2.3,0.4,2150
 Francia,2.2,0.6,2100
 España,2.1,0.6,2060
 Brasil,1.9,0.6,2015
 Inglaterra,1.9,0.7,2000
 Portugal,1.9,0.8,1980
-Países Bajos,1.8,0.8,1955
 Uruguay,1.8,0.7,1965
+Países Bajos,1.8,0.8,1955
 Colombia,1.8,0.7,1950
+Marruecos,1.6,0.7,1935
 Alemania,1.8,0.9,1930
 Bélgica,1.7,0.9,1910
-Italia,1.6,0.8,1905
-Marruecos,1.6,0.7,1935
+Japón,1.7,0.8,1885
 Croacia,1.5,0.9,1880
 Suiza,1.5,0.9,1865
-Dinamarca,1.5,0.9,1850
 Ecuador,1.4,0.7,1855
-Estados Unidos,1.6,0.9,1840
 Turquía,1.6,0.9,1845
+Estados Unidos,1.6,0.9,1840
 Senegal,1.5,0.8,1840
-Austria,1.5,0.9,1830
+Noruega,1.6,0.9,1840
 Corea del Sur,1.6,0.9,1835
-Ucrania,1.4,1.0,1810
+Austria,1.5,0.9,1830
 Irán,1.5,0.9,1815
 Suecia,1.5,0.9,1810
+Escocia,1.4,0.9,1810
 República Checa,1.4,0.9,1805
 México,1.5,1.0,1800
-Polonia,1.4,1.0,1790
 Canadá,1.5,1.1,1795
 Australia,1.4,0.9,1790
 Egipto,1.4,0.9,1765
 Argelia,1.4,1.0,1750
 Túnez,1.2,0.9,1740
-Nigeria,1.5,1.0,1745
 Costa de Marfil,1.4,1.0,1730
-Mali,1.3,0.9,1735
+Ghana,1.3,1.0,1725
 Panamá,1.3,1.1,1720
 Paraguay,1.0,0.9,1715
-Bosnia,1.3,1.0,1710
-Camerún,1.3,1.1,1690
-Costa Rica,1.2,1.2,1680
-Arabia Saudita,1.2,1.1,1685
-Jamaica,1.2,1.1,1670
+Bosnia y Herzegovina,1.3,1.0,1710
 Qatar,1.3,1.2,1675
+República Democrática del Congo,1.2,1.0,1670
+Cabo Verde,1.2,1.0,1660
 Uzbekistán,1.2,1.0,1655
 Sudáfrica,1.2,1.1,1650
-Honduras,1.1,1.2,1620
+Jordania,1.2,1.1,1645
+Irak,1.2,1.1,1640
+Curazao,1.1,1.1,1605
 Nueva Zelanda,1.1,1.2,1600
+Haití,1.0,1.2,1580
+Arabia Saudita,1.2,1.1,1685
