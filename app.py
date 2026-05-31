@@ -10,17 +10,23 @@ st.set_page_config(page_title="Simulador Mundial 2026", page_icon="⚽", layout=
 @st.cache_data
 def cargar_datos():
     try:
-        # Leemos el CSV forzando a usar solo las 4 columnas principales
-        df = pd.read_csv("equipos.csv", usecols=["Pais", "Ataque", "Defensa", "Elo"])
+        # Leemos el CSV original
+        df = pd.read_csv("equipos.csv")
         
-        # Limpieza estricta de strings y descarte de filas con datos faltantes (NaN)
-        df.columns = df.columns.str.strip()
-        df['Pais'] = df['Pais'].astype(str).str.strip()
-        df = df.dropna(subset=["Pais", "Ataque", "Defensa", "Elo"])
+        # Normalizamos los nombres de las columnas a minúsculas y limpiamos espacios
+        df.columns = df.columns.str.strip().str.lower()
         
-        # Ordenamos por Elo jerárquico
-        df = df.sort_values(by="Elo", ascending=False)
-        return df.set_index("Pais").to_dict(orient="index")
+        # Nos aseguramos de que los nombres de los países sean texto limpio
+        df['pais'] = df['pais'].astype(str).str.strip()
+        
+        # Descartamos filas con datos faltantes (NaN) en las columnas clave
+        df = df.dropna(subset=["pais", "ataque", "defensa", "elo"])
+        
+        # Ordenamos por Elo jerárquico de mayor a menor para armar las llaves
+        df = df.sort_values(by="elo", ascending=False)
+        
+        # Retornamos el diccionario indexado por país
+        return df.set_index("pais").to_dict(orient="index")
     except Exception as e:
         st.error(f"Error al cargar 'equipos.csv': {e}")
         return {}
@@ -31,15 +37,15 @@ data = cargar_datos()
 def predecir_partido(local, visitante):
     PROMEDIO_GOLES = 1.35
     
-    # Doble check de contingencia
+    # Control de contingencia absoluto por si un string no coincide
     if local not in data or visitante not in data:
         return 1, 0
         
     try:
+        # Usamos las claves en minúsculas estrictas tal como las normalizó la carga de datos
         lambda_local = float(data[local]["ataque"]) * float(data[visitante]["defensa"]) * PROMEDIO_GOLES
         lambda_visit = float(data[visitante]["ataque"]) * float(data[local]["defensa"]) * PROMEDIO_GOLES
     except (TypeError, ValueError):
-        # Si algún parámetro no es numérico, asignamos un valor por defecto seguro
         lambda_local, lambda_visit = 1.2, 1.0
     
     goles_local = int(np.argmax([poisson.pmf(i, lambda_local) for i in range(7)]))
@@ -54,8 +60,9 @@ def resolver_partido_eliminatorio(local, visitante):
     elif g_v > g_l:
         return visitante, f"{g_l} - {g_v}"
     else:
-        elo_local = data[local]['Elo'] if local in data else 1500
-        elo_visit = data[visitante]['Elo'] if visitante in data else 1500
+        # Desempate seguro por elo (en minúsculas)
+        elo_local = data[local]['elo'] if local in data else 1500
+        elo_visit = data[visitante]['elo'] if visitante in data else 1500
         ganador = local if elo_local > elo_visit else visitante
         return ganador, f"{g_l} - {g_v} (Pen.)"
 
@@ -93,7 +100,7 @@ if data:
                 if g_a > g_b: st.success(f"🎉 **Ganador proyectado:** {equipo_a}")
                 elif g_b > g_a: st.success(f"🎉 **Ganador proyectado:** {equipo_b}")
                 else:
-                    ganador_e = equipo_a if data[equipo_a]['Elo'] > data[equipo_b]['Elo'] else equipo_b
+                    ganador_e = equipo_a if data[equipo_a]['elo'] > data[equipo_b]['elo'] else equipo_b
                     st.info(f"🤝 **Empate en los 90'.** Por balance de Ranking Elo, avanza en penales: **{ganador_e}**")
 
     # ---------------------------------------------------------
