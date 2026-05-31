@@ -2,23 +2,14 @@ import streamlit as st
 import pandas as pd
 from scipy.stats import poisson
 
-# Configuración visual
-st.set_page_config(page_title="Predicciones Mundial 2026", page_icon="⚽")
+# Cargar los datos desde el archivo CSV
+@st.cache_data # Esto hace que la app cargue rápido y no lea el archivo en cada clic
+def cargar_datos():
+    df = pd.read_csv("equipos.csv")
+    # Convertimos el DataFrame en un diccionario con el país como clave
+    return df.set_index("Pais").to_dict(orient="index")
 
-# Título y Estilo
-st.title("⚽ Simulador de Resultados: Mundial")
-st.sidebar.header("Configuración del Modelo")
-
-# Variable de ajuste: ¿Es un mundial con muchos o pocos goles?
-sensibilidad = st.sidebar.slider("Factor de ofensiva global", 0.5, 2.0, 1.0)
-
-# Datos de ejemplo (Esto lo podrías cargar desde un Excel/CSV)
-data = {
-    "Argentina": {"ataque": 1.8, "defensa": 0.5},
-    "Francia": {"ataque": 1.7, "defensa": 0.6},
-    "Brasil": {"ataque": 1.6, "defensa": 0.5},
-    "España": {"ataque": 1.5, "defensa": 0.8}
-}
+data = cargar_datos()
 
 def predecir(local, visitante):
     # Lógica de Poisson ajustada por la defensa del rival
