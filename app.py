@@ -23,6 +23,11 @@ data = cargar_datos()
 # --- MOTOR DE PREDICCIÓN ---
 def predecir_partido(local, visitante):
     PROMEDIO_GOLES = 1.35
+    
+    # Validación de seguridad: si el equipo no existe en el CSV, usamos valores por defecto para que no explote
+    if local not in data or visitante not in data:
+        return 1, 1
+        
     lambda_local = data[local]["ataque"] * data[visitante]["defensa"] * PROMEDIO_GOLES
     lambda_visit = data[visitante]["ataque"] * data[local]["defensa"] * PROMEDIO_GOLES
     
@@ -38,8 +43,10 @@ def resolver_partido_eliminatorio(local, visitante):
     elif g_v > g_l:
         return visitante, f"{g_l} - {g_v}"
     else:
-        # Desempate por Elo histórico en caso de empate en goles
-        ganador = local if data[local]['Elo'] > data[visitante]['Elo'] else visitante
+        # Desempate seguro por Elo histórico
+        elo_local = data[local]['Elo'] if local in data else 1500
+        elo_visit = data[visitante]['Elo'] if visitante in data else 1500
+        ganador = local if elo_local > elo_visit else visitante
         return ganador, f"{g_l} - {g_v} (Pen.)"
 
 # --- INTERFAZ DE USUARIO (UI) ---
@@ -47,7 +54,6 @@ st.title("🏆 Simulador Inteligente - Mundial 2026")
 st.markdown("Predicciones de alta precisión usando *Distribución de Poisson* y *Ranking Elo*.")
 
 if data:
-    # Creamos las pestañas para separar las funciones
     tab1, tab2 = st.tabs(["📊 Partido Individual", "🌿 Llaves del Torneo (Playoffs)"])
     
     # ---------------------------------------------------------
@@ -77,7 +83,9 @@ if data:
                 if g_a > g_b: st.success(f"🎉 **Ganador proyectado:** {equipo_a}")
                 elif g_b > g_a: st.success(f"🎉 **Ganador proyectado:** {equipo_b}")
                 else:
-                    ganador_e = equipo_a if data[equipo_a]['Elo'] > data[equipo_b]['Elo'] else equipo_b
+                    elo_a = data[equipo_a]['Elo'] if equipo_a in data else 1500
+                    elo_b = data[equipo_b]['Elo'] if equipo_b in data else 1500
+                    ganador_e = equipo_a if elo_a > elo_b else equipo_b
                     st.info(f"🤝 **Empate en los 90'.** Por balance de Ranking Elo, avanza en penales: **{ganador_e}**")
 
     # ---------------------------------------------------------
@@ -87,7 +95,7 @@ if data:
         st.subheader("Simulación del Cuadro Final (48 Equipos - Clasificados a 16avos)")
         st.write("Estructura proyectada con las 32 mejores selecciones basadas en rendimiento previo.")
         
-        # Simulación de las llaves iniciales de 16avos de final
+        # CORREGIDO: Lista exacta de 32 equipos únicos presentes en tu equipos.csv
         llaves_16avos = [
             ("Argentina", "Nigeria"), ("México", "Alemania"),
             ("Francia", "Egipto"), ("Uruguay", "Corea del Sur"),
@@ -96,7 +104,7 @@ if data:
             ("Inglaterra", "Marruecos"), ("Bélgica", "Estados Unidos"),
             ("Portugal", "Argelia"), ("Croacia", "Japón"),
             ("Italia", "Senegal"), ("Suiza", "Ucrania"),
-            ("Dinamarca", "Austria"), ("Costa de Marfil", "Egipto")
+            ("Dinamarca", "Austria"), ("Costa de Marfil", "Túnez")
         ]
         
         if st.button("🔮 Correr Simulación Completa del Mundial", type="primary", use_container_width=True):
