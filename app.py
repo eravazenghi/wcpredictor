@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from scipy.stats import poisson
 
 # --- CONFIGURACIÓN DE LA PÁGINA ---
@@ -48,8 +47,13 @@ def predecir_partido(local, visitante):
     except (TypeError, ValueError):
         lambda_local, lambda_visit = 1.2, 1.0
     
-    goles_local = int(np.argmax([poisson.pmf(i, lambda_local) for i in range(7)]))
-    goles_visit = int(np.argmax([poisson.pmf(i, lambda_visit) for i in range(7)]))
+    # Calculamos las probabilidades para goles de 0 a 6
+    probs_local = [poisson.pmf(i, lambda_local) for i in range(7)]
+    probs_visit = [poisson.pmf(i, lambda_visit) for i in range(7)]
+    
+    # Buscamos el índice del valor máximo usando Python nativo (así evitamos conflictos de versiones de numpy)
+    goles_local = probs_local.index(max(probs_local))
+    goles_visit = probs_visit.index(max(probs_visit))
     
     return goles_local, goles_visit
 
